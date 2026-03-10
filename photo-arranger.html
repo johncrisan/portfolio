@@ -16,7 +16,7 @@
       --text: #1a1916;
       --muted: #9a9690;
       --accent: #1a1916;
-      --gap: 8px;
+      --gap: 6px;
     }
 
     body {
@@ -51,7 +51,6 @@
       top: 0;
       z-index: 10;
     }
-
     .btn {
       font-family: 'Jost', sans-serif;
       font-weight: 400;
@@ -84,7 +83,6 @@
     }
     .btn-label:hover { background: #eee; }
     #fileInput { display: none; }
-
     .toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
     .count-badge { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.08em; }
 
@@ -104,7 +102,6 @@
 
     .workspace { padding: 24px 40px 60px; }
 
-    /* ── DROP ZONE ── */
     #dropZone {
       border: 2px dashed var(--border);
       padding: 80px 40px;
@@ -116,95 +113,67 @@
     #dropZone h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.4rem; margin-bottom: 10px; }
     #dropZone p { font-size: 0.78rem; color: var(--muted); line-height: 1.8; }
 
-    /* ── HINT BAR ── */
+    /* ── PREVIEW — mirrors the site's JS column layout exactly ── */
+    #previewWrap { display: none; }
+
     .hint {
       font-size: 0.72rem;
       color: var(--muted);
-      letter-spacing: 0.06em;
       margin-bottom: 16px;
       padding: 10px 14px;
       background: var(--panel);
       border: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
-    .hint strong { color: var(--text); font-weight: 400; }
 
-    /* ── 3-COLUMN MASONRY PREVIEW ── */
-    /* This mirrors exactly how the portfolio site renders:
-       column 1 fills top-to-bottom, then col 2, then col 3.
-       Photos are distributed into columns by index: 0,3,6... / 1,4,7... / 2,5,8... */
-
-    #masonry {
+    /* 3-column grid — same logic as the site */
+    #preview {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: var(--gap);
       align-items: start;
     }
 
-    .col {
+    .preview-col {
       display: flex;
       flex-direction: column;
       gap: var(--gap);
-      min-height: 200px;
-      position: relative;
-    }
-
-    /* Drop target highlight on the column itself when empty */
-    .col.col-drag-over {
-      outline: 2px dashed var(--accent);
-      outline-offset: 4px;
     }
 
     /* ── THUMB ── */
     .thumb {
       position: relative;
-      overflow: hidden;
       cursor: grab;
       background: #e8e6e2;
       will-change: transform;
       transition: opacity 0.15s;
-      /* No fixed aspect ratio — show natural proportions like the real site */
+      user-select: none;
     }
     .thumb:active { cursor: grabbing; }
     .thumb.dragging { opacity: 0.25; }
 
-    .thumb-img {
+    .thumb img {
       width: 100%;
       display: block;
-      /* height is natural — matches masonry behaviour */
+      pointer-events: none;
     }
 
+    /* position badge — shows slot number (1, 2, 3...) */
     .thumb .num {
       position: absolute;
       top: 8px; left: 8px;
       background: rgba(26,25,22,0.75);
       color: #fff;
-      font-size: 0.65rem;
-      letter-spacing: 0.08em;
-      padding: 3px 7px;
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
       pointer-events: none;
       z-index: 2;
-      line-height: 1.4;
-    }
-
-    /* sequence number shown in top-left = position in final array (1-based) */
-    .thumb .seq {
-      position: absolute;
-      top: 8px; right: 8px;
-      background: rgba(255,255,255,0.85);
-      color: var(--text);
-      font-size: 0.6rem;
-      letter-spacing: 0.08em;
-      padding: 2px 6px;
-      pointer-events: none;
-      z-index: 2;
+      line-height: 1.5;
     }
 
     .thumb .remove-btn {
       position: absolute;
-      bottom: 8px; right: 8px;
+      top: 6px; right: 6px;
       width: 24px; height: 24px;
       background: rgba(26,25,22,0.65);
       color: #fff;
@@ -217,30 +186,35 @@
       align-items: center;
       justify-content: center;
       transition: background 0.15s;
-      z-index: 2;
+      z-index: 3;
     }
     .thumb:hover .remove-btn { display: flex; }
     .thumb .remove-btn:hover { background: rgba(180,40,40,0.85); }
 
-    /* ── INSERTION LINE between thumbs in a column ── */
+    /* horizontal insert line — appears between thumbs within a column */
     .thumb.insert-before::before,
     .thumb.insert-after::after {
       content: '';
       position: absolute;
-      left: -2px; right: -2px;
+      left: 0; right: 0;
       height: 3px;
       background: var(--accent);
       z-index: 20;
       border-radius: 2px;
       pointer-events: none;
     }
-    .thumb.insert-before::before { top: -5px; }
-    .thumb.insert-after::after   { bottom: -5px; }
+    .thumb.insert-before::before { top: -4px; }
+    .thumb.insert-after::after { bottom: -4px; }
+
+    /* column drop highlight */
+    .preview-col.col-over {
+      outline: 2px dashed var(--accent);
+      outline-offset: 3px;
+    }
 
     /* ── OUTPUT ── */
     #outputPanel { display: none; margin-top: 40px; border: 1px solid var(--border); background: var(--panel); }
     #outputPanel.visible { display: block; }
-
     .output-header {
       padding: 20px 28px;
       border-bottom: 1px solid var(--border);
@@ -252,7 +226,6 @@
     }
     .output-header h3 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1.05rem; }
     .output-header p { font-size: 0.74rem; color: var(--muted); max-width: 500px; line-height: 1.6; }
-
     #codeOutput {
       display: block; width: 100%;
       padding: 24px 28px;
@@ -261,7 +234,6 @@
       color: var(--text); background: #faf9f7;
       border: none; resize: vertical; min-height: 220px; outline: none;
     }
-
     .copy-success { font-size: 0.72rem; color: #4a7c59; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0; transition: opacity 0.3s; }
     .copy-success.show { opacity: 1; }
 
@@ -275,7 +247,7 @@
 
 <header>
   <div><h1>Photo Arranger</h1></div>
-  <p>Arrange your photos in the three columns below — what you see here is <strong>exactly</strong> how they'll appear on your portfolio site. Drag within or between columns to reorder.</p>
+  <p>Load your photos and drag to reorder. The preview below mirrors your portfolio exactly — photos are placed left to right, top to bottom, in the order you arrange them.</p>
 </header>
 
 <div class="toolbar">
@@ -298,18 +270,18 @@
   <div id="dropZone">
     <h2>Drop your photos here</h2>
     <p>Or click <strong>+ Add photos</strong> above<br />
-    Photos will be arranged into 3 columns matching your portfolio layout<br />
+    Photos flow left-to-right exactly as they will on your site<br />
     <span style="color:#bbb;font-size:0.72rem;">JPEG, WebP, PNG · files stay on your computer, nothing is uploaded</span></p>
   </div>
 
-  <div id="masonryWrap" style="display:none;">
+  <div id="previewWrap">
     <div class="hint">
-      <span>The <strong>white number</strong> (top-left) = column position &nbsp;·&nbsp; The <strong>dark number</strong> (top-right) = sequence in final array &nbsp;·&nbsp; Drag photos within or between columns to reorder</span>
+      Numbers show the position in your final ordered list — <strong>1</strong> is top-left, fills left to right. Drag within or between columns to reorder.
     </div>
-    <div id="masonry">
-      <div class="col" id="col-0" data-col="0"></div>
-      <div class="col" id="col-1" data-col="1"></div>
-      <div class="col" id="col-2" data-col="2"></div>
+    <div id="preview">
+      <div class="preview-col" data-col="0"></div>
+      <div class="preview-col" data-col="1"></div>
+      <div class="preview-col" data-col="2"></div>
     </div>
   </div>
 
@@ -333,39 +305,35 @@
       <li>Open your <code>index.html</code> in a text editor or on GitHub</li>
       <li>Find the line that starts with <code>const PHOTOS = [</code></li>
       <li>Select from that line down to the closing <code>];</code></li>
-      <li>Paste the copied code to replace it</li>
-      <li>Save — your gallery will now display in this order</li>
+      <li>Paste the copied code to replace it and save</li>
     </ol>
   </div>
 
 </div>
 
 <script>
-  // ── How masonry column ordering works ────────────────────────────────────
-  // The portfolio uses CSS `columns: 3` which fills col 1 top→bottom, then
-  // col 2, then col 3. So a flat array [0,1,2,3,4,5,6,7,8] renders as:
-  //   Col 1: 0, 3, 6
-  //   Col 2: 1, 4, 7
-  //   Col 3: 2, 5, 8
+  // ── How this works ────────────────────────────────────────────────────────
+  // The site assigns photos to columns by index % 3:
+  //   photo 0 → col 0, photo 1 → col 1, photo 2 → col 2,
+  //   photo 3 → col 0, photo 4 → col 1, ...
   //
-  // This arranger stores photos in 3 separate column arrays.
-  // When generating code, it interleaves them back:
-  //   col0[0], col1[0], col2[0], col0[1], col1[1], col2[1]...
-  // So the flat array, when rendered by masonry, shows exactly what you arranged.
+  // This arranger stores a single flat array (photos[]) and renders the
+  // preview using the same i % 3 logic — so the preview is a pixel-perfect
+  // match for how the site will look.
+  //
+  // Dragging reorders the flat array directly. Generate code outputs it as-is.
 
   const THUMB_SIZE    = 600;
   const THUMB_QUALITY = 0.92;
   const NUM_COLS      = 3;
 
-  // cols[0], cols[1], cols[2] — each is an array of { filename, thumb }
-  let cols = [[], [], []];
-
-  let dragItem   = null; // { colIndex, itemIndex }
-  let insertTarget = null; // { colIndex, itemIndex, position: 'before'|'after' }
+  let photos    = []; // flat array [{ filename, thumb }]
+  let dragIndex = null;
+  let insertTarget = null; // { flatIndex, position: 'before'|'after' }
 
   const fileInput    = document.getElementById('fileInput');
   const dropZone     = document.getElementById('dropZone');
-  const masonryWrap  = document.getElementById('masonryWrap');
+  const previewWrap  = document.getElementById('previewWrap');
   const clearBtn     = document.getElementById('clearBtn');
   const generateBtn  = document.getElementById('generateBtn');
   const copyBtn      = document.getElementById('copyBtn');
@@ -390,7 +358,7 @@
         canvas.height = Math.round(img.height * scale);
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(url);
-        resolve({ dataUrl: canvas.toDataURL('image/jpeg', THUMB_QUALITY), w: canvas.width, h: canvas.height });
+        resolve(canvas.toDataURL('image/jpeg', THUMB_QUALITY));
       };
       img.onerror = reject;
       img.src = url;
@@ -418,14 +386,12 @@
     loadingProg.textContent = `Loading 0 / ${total}`;
     progressFill.style.width = '0%';
 
-    // Collect all new photos first, then distribute into columns
-    const newPhotos = [];
     const BATCH = 3;
     for (let i = 0; i < imageFiles.length; i += BATCH) {
       const batch = imageFiles.slice(i, i + BATCH);
       await Promise.all(batch.map(async file => {
-        const { dataUrl } = await generateThumb(file);
-        newPhotos.push({ filename: file.name, thumb: dataUrl });
+        const thumb = await generateThumb(file);
+        photos.push({ filename: file.name, thumb });
         done++;
         loadingProg.textContent = `Loading ${done} / ${total}`;
         progressFill.style.width = Math.round((done / total) * 100) + '%';
@@ -433,21 +399,9 @@
       await new Promise(r => setTimeout(r, 0));
     }
 
-    // Distribute new photos into columns round-robin (matching masonry order)
-    // Existing photos stay where they are; new ones appended
-    const existingCount = cols[0].length + cols[1].length + cols[2].length;
-    newPhotos.forEach((photo, i) => {
-      const colIndex = (existingCount + i) % NUM_COLS;
-      cols[colIndex].push(photo);
-    });
-
     loadingBar.classList.remove('visible');
     progressFill.style.width = '0%';
     renderAll();
-  }
-
-  function totalPhotos() {
-    return cols[0].length + cols[1].length + cols[2].length;
   }
 
   function titleFromFilename(name) {
@@ -455,135 +409,118 @@
   }
 
   // ── Render ────────────────────────────────────
+  // Distributes flat photos[] into 3 columns using i % 3 — identical to site
   function renderAll() {
-    const total = totalPhotos();
-    if (total === 0) {
-      masonryWrap.style.display = 'none';
+    if (photos.length === 0) {
+      previewWrap.style.display = 'none';
       dropZone.style.display = '';
       updateCount();
       return;
     }
 
     dropZone.style.display = 'none';
-    masonryWrap.style.display = '';
+    previewWrap.style.display = '';
 
-    // Compute global sequence numbers
-    // Interleave: col0[0], col1[0], col2[0], col0[1], col1[1], col2[1]...
-    // seq[colIndex][itemIndex] = 1-based position in final PHOTOS array
-    const maxRows = Math.max(cols[0].length, cols[1].length, cols[2].length);
-    const seqMap = [[], [], []]; // seqMap[col][row] = sequence number
-    let seq = 1;
-    for (let row = 0; row < maxRows; row++) {
-      for (let col = 0; col < NUM_COLS; col++) {
-        if (row < cols[col].length) {
-          seqMap[col][row] = seq++;
-        }
-      }
+    // Clear columns
+    for (let c = 0; c < NUM_COLS; c++) {
+      const col = document.querySelector(`[data-col="${c}"]`);
+      col.innerHTML = '';
     }
 
-    for (let c = 0; c < NUM_COLS; c++) {
-      const colEl = document.getElementById(`col-${c}`);
-      colEl.innerHTML = '';
-      const frag = document.createDocumentFragment();
+    const frag = [
+      document.createDocumentFragment(),
+      document.createDocumentFragment(),
+      document.createDocumentFragment()
+    ];
 
-      cols[c].forEach((photo, i) => {
-        const el = document.createElement('div');
-        el.className = 'thumb';
-        el.draggable = true;
-        el.dataset.col = c;
-        el.dataset.idx = i;
+    photos.forEach((photo, i) => {
+      const colIndex = i % NUM_COLS;
 
-        const img = document.createElement('img');
-        img.className = 'thumb-img';
-        img.src = photo.thumb;
-        img.alt = photo.filename;
+      const el = document.createElement('div');
+      el.className = 'thumb';
+      el.draggable = true;
+      el.dataset.flatIndex = i;
 
-        const num = document.createElement('span');
-        num.className = 'num';
-        num.textContent = `${i + 1}`;
+      const img = document.createElement('img');
+      img.src = photo.thumb;
+      img.alt = photo.filename;
 
-        const seqEl = document.createElement('span');
-        seqEl.className = 'seq';
-        seqEl.textContent = `#${seqMap[c][i]}`;
+      const num = document.createElement('span');
+      num.className = 'num';
+      num.textContent = i + 1;
 
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
-        removeBtn.innerHTML = '&#215;';
-        removeBtn.title = 'Remove';
-        removeBtn.addEventListener('click', e => {
-          e.stopPropagation();
-          cols[c].splice(i, 1);
-          renderAll();
-          outputPanel.classList.remove('visible');
-          howTo.style.display = 'none';
-        });
-
-        el.appendChild(img);
-        el.appendChild(num);
-        el.appendChild(seqEl);
-        el.appendChild(removeBtn);
-
-        el.addEventListener('dragstart', onDragStart);
-        el.addEventListener('dragover',  onDragOver);
-        el.addEventListener('dragleave', onDragLeave);
-        el.addEventListener('drop',      onDrop);
-        el.addEventListener('dragend',   onDragEnd);
-
-        frag.appendChild(el);
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.innerHTML = '&#215;';
+      removeBtn.title = 'Remove';
+      removeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        photos.splice(i, 1);
+        renderAll();
+        outputPanel.classList.remove('visible');
+        howTo.style.display = 'none';
       });
 
-      colEl.appendChild(frag);
+      el.appendChild(img);
+      el.appendChild(num);
+      el.appendChild(removeBtn);
 
-      // Column-level drop (for dropping into an empty column or at the end)
-      colEl.addEventListener('dragover', onColDragOver);
-      colEl.addEventListener('dragleave', onColDragLeave);
-      colEl.addEventListener('drop', onColDrop);
+      el.addEventListener('dragstart', onDragStart);
+      el.addEventListener('dragover',  onDragOver);
+      el.addEventListener('dragleave', onDragLeave);
+      el.addEventListener('drop',      onDrop);
+      el.addEventListener('dragend',   onDragEnd);
+
+      frag[colIndex].appendChild(el);
+    });
+
+    for (let c = 0; c < NUM_COLS; c++) {
+      const col = document.querySelector(`[data-col="${c}"]`);
+      col.appendChild(frag[c]);
+
+      // Column-level drop (dropping at end of column or into empty column)
+      col.addEventListener('dragover', onColDragOver);
+      col.addEventListener('dragleave', onColDragLeave);
+      col.addEventListener('drop', onColDrop);
     }
 
     updateCount();
   }
 
   function updateCount() {
-    const t = totalPhotos();
-    countBadge.textContent = `${t} photo${t !== 1 ? 's' : ''}`;
+    countBadge.textContent = `${photos.length} photo${photos.length !== 1 ? 's' : ''}`;
   }
 
   // ── Drag & drop ───────────────────────────────
   function onDragStart(e) {
-    dragItem = {
-      colIndex: Number(e.currentTarget.dataset.col),
-      itemIndex: Number(e.currentTarget.dataset.idx)
-    };
+    dragIndex = Number(e.currentTarget.dataset.flatIndex);
     requestAnimationFrame(() => e.currentTarget.classList.add('dragging'));
     e.dataTransfer.effectAllowed = 'move';
   }
 
   function onDragOver(e) {
     e.preventDefault();
-    e.stopPropagation(); // prevent column handler firing too
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
 
     const target = e.currentTarget;
-    const targetCol = Number(target.dataset.col);
-    const targetIdx = Number(target.dataset.idx);
+    const targetIdx = Number(target.dataset.flatIndex);
     const rect = target.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    const before = e.clientY < midpoint;
+    const before = e.clientY < rect.top + rect.height / 2;
 
     clearInsertIndicators();
-    insertTarget = { colIndex: targetCol, itemIndex: targetIdx, position: before ? 'before' : 'after' };
 
-    // Don't show indicator if it wouldn't move anything
-    if (dragItem &&
-        dragItem.colIndex === targetCol &&
-        ((before && dragItem.itemIndex === targetIdx) ||
-         (!before && dragItem.itemIndex === targetIdx) ||
-         (before && dragItem.itemIndex === targetIdx - 1) ||
-         (!before && dragItem.itemIndex === targetIdx + 1))) {
-      insertTarget = null;
-      return;
+    // Don't show if no movement would result
+    if (dragIndex !== null) {
+      const wouldBeSame =
+        (before && targetIdx === dragIndex) ||
+        (before && targetIdx === dragIndex + 1) ||
+        (!before && targetIdx === dragIndex) ||
+        (!before && targetIdx === dragIndex - 1);
+      if (wouldBeSame) return;
     }
 
+    insertTarget = { flatIndex: targetIdx, position: before ? 'before' : 'after' };
     target.classList.add(before ? 'insert-before' : 'insert-after');
   }
 
@@ -596,21 +533,15 @@
   function onDrop(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (!dragItem || !insertTarget) { cleanup(); return; }
+    if (dragIndex === null || !insertTarget) { cleanup(); return; }
 
-    const { colIndex: fromCol, itemIndex: fromIdx } = dragItem;
-    const { colIndex: toCol, itemIndex: toIdx, position } = insertTarget;
+    const { flatIndex: toIdx, position } = insertTarget;
+    if (toIdx === dragIndex) { cleanup(); return; }
 
-    // Remove from source
-    const moved = cols[fromCol].splice(fromIdx, 1)[0];
-
-    // Adjust target index if same column and removing shifted things
-    let adjustedIdx = toIdx;
-    if (fromCol === toCol && fromIdx < toIdx) adjustedIdx--;
-
-    // Insert at correct position
+    const moved = photos.splice(dragIndex, 1)[0];
+    let adjustedIdx = toIdx > dragIndex ? toIdx - 1 : toIdx;
     const insertAt = position === 'before' ? adjustedIdx : adjustedIdx + 1;
-    cols[toCol].splice(Math.max(0, insertAt), 0, moved);
+    photos.splice(Math.max(0, Math.min(insertAt, photos.length)), 0, moved);
 
     cleanup();
     renderAll();
@@ -618,44 +549,37 @@
     howTo.style.display = 'none';
   }
 
-  // Column-level drag handlers (handles dropping at end of column or into empty column)
   function onColDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    e.currentTarget.classList.add('col-drag-over');
-    insertTarget = { colIndex: Number(e.currentTarget.dataset.col), itemIndex: -1, position: 'end' };
+    e.currentTarget.classList.add('col-over');
+    insertTarget = { flatIndex: -1, position: 'end', colIndex: Number(e.currentTarget.dataset.col) };
   }
 
   function onColDragLeave(e) {
     if (!e.currentTarget.contains(e.relatedTarget)) {
-      e.currentTarget.classList.remove('col-drag-over');
+      e.currentTarget.classList.remove('col-over');
     }
   }
 
   function onColDrop(e) {
     e.preventDefault();
-    if (!dragItem || !insertTarget || insertTarget.position !== 'end') { cleanup(); return; }
-
-    const { colIndex: fromCol, itemIndex: fromIdx } = dragItem;
-    const toCol = insertTarget.colIndex;
-
-    const moved = cols[fromCol].splice(fromIdx, 1)[0];
-    cols[toCol].push(moved);
-
+    if (!dragIndex === null || !insertTarget || insertTarget.position !== 'end') { cleanup(); return; }
+    // Just append to end — simplest behavior for column drops
+    const moved = photos.splice(dragIndex, 1)[0];
+    photos.push(moved);
     cleanup();
     renderAll();
     outputPanel.classList.remove('visible');
     howTo.style.display = 'none';
   }
 
-  function onDragEnd(e) {
-    cleanup();
-  }
+  function onDragEnd() { cleanup(); }
 
   function cleanup() {
     clearInsertIndicators();
-    document.querySelectorAll('.col').forEach(c => c.classList.remove('col-drag-over'));
-    dragItem = null;
+    document.querySelectorAll('.preview-col').forEach(c => c.classList.remove('col-over'));
+    dragIndex = null;
     insertTarget = null;
   }
 
@@ -665,27 +589,17 @@
 
   // ── Clear ─────────────────────────────────────
   clearBtn.addEventListener('click', () => {
-    if (totalPhotos() && !confirm('Remove all photos?')) return;
-    cols = [[], [], []];
+    if (photos.length && !confirm('Remove all photos?')) return;
+    photos = [];
     renderAll();
     outputPanel.classList.remove('visible');
     howTo.style.display = 'none';
   });
 
   // ── Generate code ─────────────────────────────
-  // Interleave columns: col0[0], col1[0], col2[0], col0[1], col1[1], col2[1]...
   generateBtn.addEventListener('click', () => {
-    if (!totalPhotos()) { alert('Add some photos first!'); return; }
-
-    const maxRows = Math.max(cols[0].length, cols[1].length, cols[2].length);
-    const flat = [];
-    for (let row = 0; row < maxRows; row++) {
-      for (let col = 0; col < NUM_COLS; col++) {
-        if (row < cols[col].length) flat.push(cols[col][row]);
-      }
-    }
-
-    const lines = flat.map(p =>
+    if (!photos.length) { alert('Add some photos first!'); return; }
+    const lines = photos.map(p =>
       `  { src: "images/${p.filename}", title: "${titleFromFilename(p.filename)}", category: "general" }`
     );
     codeOutput.value = `const PHOTOS = [\n${lines.join(',\n')}\n];`;

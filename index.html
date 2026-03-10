@@ -116,21 +116,29 @@
       padding-bottom: 1px;
     }
 
-    /* Masonry-style grid */
+    /* JS-controlled masonry — 3 explicit columns */
     .gallery-grid {
-      columns: 3;
-      column-gap: var(--gap);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+      align-items: start;
     }
 
-    @media (max-width: 900px) { .gallery-grid { columns: 2; } }
+    .gallery-col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+    }
+
+    @media (max-width: 900px) {
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 540px) {
-      .gallery-grid { columns: 1; }
+      .gallery-grid { grid-template-columns: 1fr; }
       header, .hero, .gallery-section { padding-left: 24px; padding-right: 24px; }
     }
 
     .gallery-item {
-      break-inside: avoid;
-      margin-bottom: var(--gap);
       overflow: hidden;
       cursor: pointer;
       position: relative;
@@ -263,32 +271,7 @@
       text-transform: uppercase;
     }
 
-    /* ── INSTRUCTIONS PANEL (remove before deploy) ── */
-    .instructions {
-      margin: 0 56px 40px;
-      padding: 28px 32px;
-      border: 1px dashed #ccc;
-      border-radius: 2px;
-      background: #fff;
-    }
-    .instructions h3 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.1rem;
-      font-weight: 400;
-      margin-bottom: 12px;
-    }
-    .instructions ol {
-      padding-left: 20px;
-      font-size: 0.82rem;
-      line-height: 2;
-      color: #555;
-    }
-    .instructions code {
-      background: #f0eeea;
-      padding: 1px 6px;
-      border-radius: 2px;
-      font-size: 0.8rem;
-    }
+
   </style>
 </head>
 <body>
@@ -308,18 +291,7 @@
     <h1>Selected<br><em>photographs</em></h1>
   </section>
 
-  <!-- SETUP INSTRUCTIONS (delete this block before publishing) -->
-  <div class="instructions">
-    <h3>⟶ How to add your photos</h3>
-    <ol>
-      <li>Put your JPEG/WebP images in a folder called <code>images/</code> next to this HTML file.</li>
-      <li>In the <code>PHOTOS</code> array below (inside the &lt;script&gt; tag), replace each <code>src</code> with your filename, e.g. <code>"images/my-photo.jpg"</code>.</li>
-      <li>Update the <code>title</code> and <code>category</code> for each photo.</li>
-      <li>Add or remove objects in the array to match how many photos you have.</li>
-      <li>Change <strong>Your Name</strong> in the header to your actual name.</li>
-      <li>Delete this instructions box when you're done.</li>
-    </ol>
-  </div>
+
 
   <!-- GALLERY -->
   <section class="gallery-section" id="gallery">
@@ -414,10 +386,22 @@
       filterBar.appendChild(btn);
     });
 
-    // Render gallery
+    // Render gallery — distributes photos into 3 explicit columns
+    // Photos are assigned left-to-right: 0→col1, 1→col2, 2→col3, 3→col1...
+    // This means your PHOTOS array order maps directly to visual left-to-right order
     function renderGallery(photos) {
       const grid = document.getElementById('galleryGrid');
       grid.innerHTML = '';
+
+      const numCols = window.innerWidth <= 540 ? 1 : window.innerWidth <= 900 ? 2 : 3;
+      const colEls = [];
+      for (let c = 0; c < numCols; c++) {
+        const col = document.createElement('div');
+        col.className = 'gallery-col';
+        grid.appendChild(col);
+        colEls.push(col);
+      }
+
       photos.forEach((photo, i) => {
         const item = document.createElement('div');
         item.className = 'gallery-item';
@@ -426,7 +410,7 @@
           <div class="caption">${photo.category}</div>
         `;
         item.addEventListener('click', () => openLightbox(i));
-        grid.appendChild(item);
+        colEls[i % numCols].appendChild(item);
       });
     }
 
