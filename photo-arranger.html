@@ -113,19 +113,18 @@
     #dropZone h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.4rem; margin-bottom: 10px; }
     #dropZone p { font-size: 0.78rem; color: var(--muted); line-height: 1.8; }
 
-    /* ── PREVIEW — mirrors the site's JS column layout exactly ── */
     #previewWrap { display: none; }
 
     .hint {
       font-size: 0.72rem;
       color: var(--muted);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       padding: 10px 14px;
       background: var(--panel);
       border: 1px solid var(--border);
+      line-height: 1.6;
     }
 
-    /* 3-column grid — same logic as the site */
     #preview {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -137,9 +136,14 @@
       display: flex;
       flex-direction: column;
       gap: var(--gap);
+      min-height: 100px;
     }
 
-    /* ── THUMB ── */
+    .preview-col.col-over {
+      outline: 2px dashed var(--accent);
+      outline-offset: 3px;
+    }
+
     .thumb {
       position: relative;
       cursor: grab;
@@ -157,7 +161,6 @@
       pointer-events: none;
     }
 
-    /* position badge — shows slot number (1, 2, 3...) */
     .thumb .num {
       position: absolute;
       top: 8px; left: 8px;
@@ -191,7 +194,6 @@
     .thumb:hover .remove-btn { display: flex; }
     .thumb .remove-btn:hover { background: rgba(180,40,40,0.85); }
 
-    /* horizontal insert line — appears between thumbs within a column */
     .thumb.insert-before::before,
     .thumb.insert-after::after {
       content: '';
@@ -206,13 +208,6 @@
     .thumb.insert-before::before { top: -4px; }
     .thumb.insert-after::after { bottom: -4px; }
 
-    /* column drop highlight */
-    .preview-col.col-over {
-      outline: 2px dashed var(--accent);
-      outline-offset: 3px;
-    }
-
-    /* ── OUTPUT ── */
     #outputPanel { display: none; margin-top: 40px; border: 1px solid var(--border); background: var(--panel); }
     #outputPanel.visible { display: block; }
     .output-header {
@@ -276,12 +271,12 @@
 
   <div id="previewWrap">
     <div class="hint">
-      Numbers show the position in your final ordered list — <strong>1</strong> is top-left, fills left to right. Drag within or between columns to reorder.
+      The number on each photo = its position in the final list. Photo <strong>1</strong> is top-left, <strong>2</strong> is top-middle, <strong>3</strong> is top-right, <strong>4</strong> starts the next row, and so on. Drag to reorder.
     </div>
     <div id="preview">
-      <div class="preview-col" data-col="0"></div>
-      <div class="preview-col" data-col="1"></div>
-      <div class="preview-col" data-col="2"></div>
+      <div class="preview-col" id="pcol-0"></div>
+      <div class="preview-col" id="pcol-1"></div>
+      <div class="preview-col" id="pcol-2"></div>
     </div>
   </div>
 
@@ -302,35 +297,25 @@
   <div class="instructions" id="howTo" style="display:none;">
     <h3>How to use this code</h3>
     <ol>
-      <li>Open your <code>index.html</code> in a text editor or on GitHub</li>
+      <li>Open your <code>index.html</code> on GitHub (click the pencil icon to edit)</li>
       <li>Find the line that starts with <code>const PHOTOS = [</code></li>
       <li>Select from that line down to the closing <code>];</code></li>
-      <li>Paste the copied code to replace it and save</li>
+      <li>Paste the copied code to replace it, then commit</li>
     </ol>
   </div>
 
 </div>
 
 <script>
-  // ── How this works ────────────────────────────────────────────────────────
-  // The site assigns photos to columns by index % 3:
-  //   photo 0 → col 0, photo 1 → col 1, photo 2 → col 2,
-  //   photo 3 → col 0, photo 4 → col 1, ...
-  //
-  // This arranger stores a single flat array (photos[]) and renders the
-  // preview using the same i % 3 logic — so the preview is a pixel-perfect
-  // match for how the site will look.
-  //
-  // Dragging reorders the flat array directly. Generate code outputs it as-is.
-
   const THUMB_SIZE    = 600;
   const THUMB_QUALITY = 0.92;
   const NUM_COLS      = 3;
 
-  let photos    = []; // flat array [{ filename, thumb }]
+  let photos    = [];
   let dragIndex = null;
-  let insertTarget = null; // { flatIndex, position: 'before'|'after' }
+  let insertTarget = null;
 
+  // Cache elements
   const fileInput    = document.getElementById('fileInput');
   const dropZone     = document.getElementById('dropZone');
   const previewWrap  = document.getElementById('previewWrap');
@@ -345,6 +330,38 @@
   const loadingBar   = document.getElementById('loadingBar');
   const loadingProg  = document.getElementById('loadingProgress');
   const progressFill = document.getElementById('progressFill');
+
+  // Cache column elements by ID — reliable, no querySelector needed
+  const colEls = [
+    document.getElementById('pcol-0'),
+    document.getElementById('pcol-1'),
+    document.getElementById('pcol-2')
+  ];
+
+  // Attach column drop handlers once at startup
+  colEls.forEach((col, c) => {
+    col.addEventListener('dragover', e => {
+      e.preventDefault();
+      col.classList.add('col-over');
+    });
+    col.addEventListener('dragleave', e => {
+      if (!col.contains(e.relatedTarget)) col.classList.remove('col-over');
+    });
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('col-over');
+      if (dragIndex === null) return;
+      // Drop on empty space at bottom of column — move to end of that column's slots
+      // Find the last index that belongs to this column
+      const lastInCol = photos.reduce((last, _, i) => i % NUM_COLS === c ? i : last, -1);
+      const moved = photos.splice(dragIndex, 1)[0];
+      // Re-calculate after splice
+      const newLastInCol = photos.reduce((last, _, i) => i % NUM_COLS === c ? i : last, photos.length - 1);
+      photos.splice(newLastInCol + 1, 0, moved);
+      cleanup();
+      renderAll();
+    });
+  });
 
   // ── Thumbnail generator ───────────────────────
   function generateThumb(file) {
@@ -409,7 +426,6 @@
   }
 
   // ── Render ────────────────────────────────────
-  // Distributes flat photos[] into 3 columns using i % 3 — identical to site
   function renderAll() {
     if (photos.length === 0) {
       previewWrap.style.display = 'none';
@@ -421,13 +437,8 @@
     dropZone.style.display = 'none';
     previewWrap.style.display = '';
 
-    // Clear columns
-    for (let c = 0; c < NUM_COLS; c++) {
-      const col = document.querySelector(`[data-col="${c}"]`);
-      col.innerHTML = '';
-    }
-
-    const frag = [
+    // Build 3 document fragments
+    const frags = [
       document.createDocumentFragment(),
       document.createDocumentFragment(),
       document.createDocumentFragment()
@@ -453,9 +464,9 @@
       removeBtn.className = 'remove-btn';
       removeBtn.innerHTML = '&#215;';
       removeBtn.title = 'Remove';
-      removeBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        photos.splice(i, 1);
+      removeBtn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        photos.splice(Number(el.dataset.flatIndex), 1);
         renderAll();
         outputPanel.classList.remove('visible');
         howTo.style.display = 'none';
@@ -471,18 +482,14 @@
       el.addEventListener('drop',      onDrop);
       el.addEventListener('dragend',   onDragEnd);
 
-      frag[colIndex].appendChild(el);
+      frags[colIndex].appendChild(el);
     });
 
-    for (let c = 0; c < NUM_COLS; c++) {
-      const col = document.querySelector(`[data-col="${c}"]`);
-      col.appendChild(frag[c]);
-
-      // Column-level drop (dropping at end of column or into empty column)
-      col.addEventListener('dragover', onColDragOver);
-      col.addEventListener('dragleave', onColDragLeave);
-      col.addEventListener('drop', onColDrop);
-    }
+    // Clear columns and append new content in one pass
+    colEls.forEach((col, c) => {
+      col.innerHTML = '';
+      col.appendChild(frags[c]);
+    });
 
     updateCount();
   }
@@ -510,13 +517,10 @@
 
     clearInsertIndicators();
 
-    // Don't show if no movement would result
     if (dragIndex !== null) {
       const wouldBeSame =
         (before && targetIdx === dragIndex) ||
-        (before && targetIdx === dragIndex + 1) ||
-        (!before && targetIdx === dragIndex) ||
-        (!before && targetIdx === dragIndex - 1);
+        (!before && targetIdx === dragIndex);
       if (wouldBeSame) return;
     }
 
@@ -549,36 +553,11 @@
     howTo.style.display = 'none';
   }
 
-  function onColDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    e.currentTarget.classList.add('col-over');
-    insertTarget = { flatIndex: -1, position: 'end', colIndex: Number(e.currentTarget.dataset.col) };
-  }
-
-  function onColDragLeave(e) {
-    if (!e.currentTarget.contains(e.relatedTarget)) {
-      e.currentTarget.classList.remove('col-over');
-    }
-  }
-
-  function onColDrop(e) {
-    e.preventDefault();
-    if (!dragIndex === null || !insertTarget || insertTarget.position !== 'end') { cleanup(); return; }
-    // Just append to end — simplest behavior for column drops
-    const moved = photos.splice(dragIndex, 1)[0];
-    photos.push(moved);
-    cleanup();
-    renderAll();
-    outputPanel.classList.remove('visible');
-    howTo.style.display = 'none';
-  }
-
   function onDragEnd() { cleanup(); }
 
   function cleanup() {
     clearInsertIndicators();
-    document.querySelectorAll('.preview-col').forEach(c => c.classList.remove('col-over'));
+    colEls.forEach(c => c.classList.remove('col-over'));
     dragIndex = null;
     insertTarget = null;
   }
