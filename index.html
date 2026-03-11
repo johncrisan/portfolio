@@ -417,7 +417,7 @@ renderGallery(filtered);
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const f = btn.dataset.filter;
-      filtered = f === 'all' ? [...PHOTOS] : PHOTOS.filter(p => p.category === f);
+      filtered = PHOTOS.filter(p => p.category === f);
       renderGallery(filtered);
     });
 
