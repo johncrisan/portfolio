@@ -406,7 +406,9 @@ const PHOTOS = [
       });
     }
 
-    renderGallery(PHOTOS);
+    filtered = PHOTOS.filter(p => p.category === 'portfolio');
+renderGallery(filtered);
+
 
     // Filter logic
     filterBar.addEventListener('click', e => {
