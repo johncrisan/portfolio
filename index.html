@@ -430,6 +430,7 @@ item.appendChild(img);
     filtered = PHOTOS.filter(p => p.category === 'Color');
 renderGallery(filtered);
 document.querySelector('[data-filter="Color"]').classList.add('active');
+window.addEventListener('resize', () => renderGallery(filtered));
 
 
     // Filter logic
