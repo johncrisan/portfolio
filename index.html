@@ -252,8 +252,6 @@
     /* ── LIGHTBOX INFO BUTTON ── */
     #lightbox-info-btn {
       position: absolute;
-      bottom: 28px;
-      left: 36px;
       background: none;
       border: none;
       color: var(--muted);
@@ -270,8 +268,6 @@
 
     #lightbox-info-label {
       position: absolute;
-      bottom: 28px;
-      left: 58px;
       font-size: 0.68rem;
       letter-spacing: 0.08em;
       color: var(--text);
@@ -516,16 +512,22 @@
       }
 
       const imgEl = document.getElementById('lightbox-img');
-      imgEl.onload = () => {
+      function positionInfo() {
+        const rect = imgEl.getBoundingClientRect();
+        const topPos  = rect.top + 10 + 'px';
+        const leftPos = rect.left + 10 + 'px';
+        const labelLeft = rect.left + 32 + 'px';
+        lbInfoBtn.style.top  = topPos;
+        lbInfoBtn.style.left = leftPos;
+        lbInfoLabel.style.top  = topPos;
+        lbInfoLabel.style.left = labelLeft;
+        // also keep counter centered below image
         const meta = document.getElementById('lightbox-meta');
-        const imgBottom = imgEl.getBoundingClientRect().bottom;
-        const viewHeight = window.innerHeight;
-        const spaceBelow = viewHeight - imgBottom;
-        const bottomPos = Math.max(12, spaceBelow / 2 - 20) + 'px';
-        meta.style.bottom = bottomPos;
-        lbInfoBtn.style.bottom = bottomPos;
-        lbInfoLabel.style.bottom = bottomPos;
-      };
+        const spaceBelow = window.innerHeight - rect.bottom;
+        meta.style.bottom = Math.max(12, spaceBelow / 2 - 20) + 'px';
+      }
+      imgEl.onload = positionInfo;
+      if (imgEl.complete) positionInfo();
     }
 
     function prevPhoto() {
