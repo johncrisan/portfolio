@@ -215,11 +215,15 @@
     #lightbox-next { right: 16px; }
     #lightbox-prev:hover, #lightbox-next:hover { color: var(--text); }
 
-    #lightbox-meta {
-      position: absolute;
-      bottom: 28px; left: 50%; transform: translateX(-50%);
-      text-align: center;
-    }
+#lightbox-meta {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  width: 100%;
+  padding: 0 60px;
+}
 
     #lightbox-title {
       font-family: 'Cormorant Garamond', serif;
@@ -449,6 +453,15 @@ document.querySelector('[data-filter="Color"]').classList.add('active');
       lbImg.alt = photo.title;
       lbTitle.textContent = photo.title;
       lbCounter.textContent = `${currentIndex + 1} / ${filtered.length}`;
+
+        const imgEl = document.getElementById('lightbox-img');
+  imgEl.onload = () => {
+    const meta = document.getElementById('lightbox-meta');
+    const imgBottom = imgEl.getBoundingClientRect().bottom;
+    const viewHeight = window.innerHeight;
+    const spaceBelow = viewHeight - imgBottom;
+    meta.style.bottom = Math.max(12, spaceBelow / 2 - 20) + 'px';
+  };    
     }
 
     function prevPhoto() {
