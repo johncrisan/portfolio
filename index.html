@@ -259,6 +259,23 @@
     @media (max-height: 500px) and (orientation: landscape) {
   #lightbox-meta { display: none; }
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1916;
+    --text: #f0eeea;
+    --muted: #6b6860;
+    --accent: #f0eeea;
+  }
+
+  #lightbox {
+    background: rgba(20, 19, 17, 0.96);
+  }
+
+  footer {
+    border-top-color: #2e2c29;
+  }
+}
     
   </style>
 </head>
