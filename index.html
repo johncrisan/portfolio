@@ -419,6 +419,7 @@ img.src = photo.src;
 img.alt = photo.title;
 img.loading = 'lazy';
 img.onload = () => img.classList.add('loaded');
+if (img.complete) img.classList.add('loaded');
 item.appendChild(img);
 
         item.addEventListener('click', () => openLightbox(i));
