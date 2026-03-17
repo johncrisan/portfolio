@@ -225,13 +225,58 @@
     #lightbox-prev:hover, #lightbox-next:hover { color: var(--text); }
 
     @media (max-width: 768px) {
+      /* Switch lightbox to column layout on mobile */
+      #lightbox {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+      }
+
+      #lightbox-img-wrap {
+        max-width: 94vw;
+        max-height: 72vh;
+      }
+
+      #lightbox-img {
+        max-width: 94vw;
+        max-height: 72vh;
+      }
+
+      /* Nav row: prev · counter · next in a flex row below the image */
       #lightbox-prev, #lightbox-next {
+        position: static;
         top: auto;
         transform: none;
-        bottom: 28px;
+        padding: 10px 20px;
+        font-size: 1.2rem;
       }
-      #lightbox-prev { left: 28px; }
-      #lightbox-next { right: 28px; }
+
+      #lightbox-meta {
+        position: static;
+        transform: none;
+        bottom: auto;
+        left: auto;
+        width: auto;
+        padding: 0;
+        display: flex;
+        align-items: center;
+      }
+
+      #lightbox-counter {
+        margin-top: 0;
+        min-width: 64px;
+        text-align: center;
+      }
+
+      /* Wrap prev/counter/next in a row — injected via a wrapper div on mobile */
+      #lightbox-nav-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 16px;
+        width: 100%;
+      }
     }
 
     #lightbox-meta {
@@ -367,17 +412,18 @@
   <!-- LIGHTBOX -->
   <div id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
     <button id="lightbox-close" aria-label="Close">&#215;</button>
-    <button id="lightbox-prev" aria-label="Previous photo">&#8592;</button>
     <div id="lightbox-img-wrap">
       <img id="lightbox-img" src="" alt="" />
       <button id="lightbox-info-btn" aria-label="Camera info">ⓘ</button>
       <span id="lightbox-info-label"></span>
     </div>
-    <button id="lightbox-next" aria-label="Next photo">&#8594;</button>
+    <button id="lightbox-prev" aria-label="Previous photo">&#8592;</button>
     <div id="lightbox-meta">
       <span id="lightbox-title"></span>
       <span id="lightbox-counter"></span>
     </div>
+    <button id="lightbox-next" aria-label="Next photo">&#8594;</button>
+    <div id="lightbox-nav-row"></div>
   </div>
 
   <!-- FOOTER -->
@@ -574,6 +620,27 @@
       currentIndex = (currentIndex + 1) % filtered.length;
       showPhoto();
     }
+
+    // On mobile, reflow nav elements into a single row beneath the image
+    function reflowNav() {
+      const navRow = document.getElementById('lightbox-nav-row');
+      const prev = document.getElementById('lightbox-prev');
+      const meta = document.getElementById('lightbox-meta');
+      const next = document.getElementById('lightbox-next');
+      if (window.innerWidth <= 768) {
+        navRow.appendChild(prev);
+        navRow.appendChild(meta);
+        navRow.appendChild(next);
+      } else {
+        // Restore to original positions (before navRow) for desktop
+        const lb = document.getElementById('lightbox');
+        lb.insertBefore(prev, document.getElementById('lightbox-img-wrap'));
+        lb.insertBefore(next, navRow);
+        lb.insertBefore(meta, navRow);
+      }
+    }
+    reflowNav();
+    window.addEventListener('resize', reflowNav);
 
     document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
     document.getElementById('lightbox-prev').addEventListener('click', e => { e.stopPropagation(); prevPhoto(); });
