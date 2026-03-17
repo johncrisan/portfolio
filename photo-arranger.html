@@ -338,7 +338,7 @@
           const filename = entry.src.replace(/^images\//, '');
           const cat = entry.category === 'B&W' ? 'B&W' : 'Color';
           const col = entry.col || ((i % 3) + 1);
-          preloadMap[filename] = { collection: cat, col, index: i, camera: entry.camera || '', film: entry.film || '' };
+          preloadMap[filename] = { collection: cat, col, index: i, camera: entry.camera || '', film: entry.film || '', location: entry.location || '' };
         }
       });
       applyPreloadOrder();
@@ -369,8 +369,9 @@
       const photo = flatPool[filename];
       if (photo) {
         photo.col = info.col;
-        if (info.camera) photo.camera = info.camera;
-        if (info.film)   photo.film   = info.film;
+        if (info.camera)   photo.camera   = info.camera;
+        if (info.film)     photo.film     = info.film;
+        if (info.location) photo.location = info.location;
         collections[info.collection][info.col].push(photo);
       }
     });
@@ -426,8 +427,9 @@
         if (preloadMap && preloadMap[file.name]) {
           const info = preloadMap[file.name];
           photo.col = info.col;
-          photo.camera = info.camera || '';
-          photo.film = info.film || '';
+          photo.camera   = info.camera   || '';
+          photo.film     = info.film     || '';
+          photo.location = info.location || '';
           const targetCat = info.collection;
           const targetCol = info.col;
           if (!collections[targetCat][targetCol].find(p => p.filename === file.name))
@@ -670,8 +672,17 @@
       filmInput.addEventListener('mousedown', e => e.stopPropagation());
       filmInput.addEventListener('input', () => { photo.film = filmInput.value; });
 
+      const locationInput = document.createElement('input');
+      locationInput.type = 'text';
+      locationInput.className = 'meta-input';
+      locationInput.placeholder = 'Location';
+      locationInput.value = photo.location || '';
+      locationInput.addEventListener('mousedown', e => e.stopPropagation());
+      locationInput.addEventListener('input', () => { photo.location = locationInput.value; });
+
       metaWrap.appendChild(cameraInput);
       metaWrap.appendChild(filmInput);
+      metaWrap.appendChild(locationInput);
 
       row.appendChild(handle); row.appendChild(numEl); row.appendChild(img);
       row.appendChild(name); row.appendChild(metaWrap); row.appendChild(colSel); row.appendChild(removeBtn);
@@ -775,9 +786,10 @@
     ['Color', 'B&W'].forEach(cat => {
       [1, 2, 3].forEach(colNum => {
         collections[cat][colNum].forEach(p => {
-          const camPart  = p.camera ? ', camera: "' + p.camera + '"' : '';
-          const filmPart = p.film   ? ', film: "'   + p.film   + '"' : '';
-          lines.push('  { src: "images/' + p.filename + '", title: "' + titleFromFilename(p.filename) + '", category: "' + cat + '", col: ' + colNum + camPart + filmPart + ' }');
+          const camPart      = p.camera   ? ', camera: "'   + p.camera   + '"' : '';
+          const filmPart     = p.film     ? ', film: "'     + p.film     + '"' : '';
+          const locationPart = p.location ? ', location: "' + p.location + '"' : '';
+          lines.push('  { src: "images/' + p.filename + '", title: "' + titleFromFilename(p.filename) + '", category: "' + cat + '", col: ' + colNum + camPart + filmPart + locationPart + ' }');
         });
       });
     });

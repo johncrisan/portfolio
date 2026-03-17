@@ -615,7 +615,7 @@
       lbInfoBtn.classList.toggle('visible', !!hasInfo);
       lbInfoLabel.classList.add('open');
       if (hasInfo) {
-        const parts = [photo.camera, photo.film].filter(Boolean);
+        const parts = [photo.camera, photo.film, photo.location].filter(Boolean);
         lbInfoLabel.textContent = parts.join(' · ');
       }
 
