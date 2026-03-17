@@ -224,6 +224,16 @@
     #lightbox-next { right: 16px; }
     #lightbox-prev:hover, #lightbox-next:hover { color: var(--text); }
 
+    @media (max-width: 768px) {
+      #lightbox-prev, #lightbox-next {
+        top: auto;
+        transform: none;
+        bottom: 28px;
+      }
+      #lightbox-prev { left: 28px; }
+      #lightbox-next { right: 28px; }
+    }
+
     #lightbox-meta {
       position: absolute;
       bottom: 28px;
