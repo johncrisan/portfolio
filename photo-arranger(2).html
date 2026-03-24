@@ -338,7 +338,7 @@
           const filename = entry.src.replace(/^images\//, '');
           const cat = entry.category === 'B&W' ? 'B&W' : 'Color';
           const col = entry.col || ((i % 3) + 1);
-          preloadMap[filename] = { collection: cat, col, index: i, camera: entry.camera || '', film: entry.film || '', location: entry.location || '' };
+          preloadMap[filename] = { collection: cat, col, index: i, camera: entry.camera || '', film: entry.film || '', location: entry.location || '', w: entry.w ? Number(entry.w) : null, h: entry.h ? Number(entry.h) : null };
         }
       });
       applyPreloadOrder();
@@ -372,6 +372,8 @@
         if (info.camera)   photo.camera   = info.camera;
         if (info.film)     photo.film     = info.film;
         if (info.location) photo.location = info.location;
+        if (info.w)        photo.w        = info.w;
+        if (info.h)        photo.h        = info.h;
         collections[info.collection][info.col].push(photo);
       }
     });
@@ -390,13 +392,15 @@
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
         const canvas = document.createElement('canvas');
         const scale = THUMB_SIZE / Math.max(img.width, img.height);
         canvas.width  = Math.round(img.width  * scale);
         canvas.height = Math.round(img.height * scale);
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(url);
-        resolve(canvas.toDataURL('image/jpeg', THUMB_QUALITY));
+        resolve({ thumb: canvas.toDataURL('image/jpeg', THUMB_QUALITY), w, h });
       };
       img.onerror = reject;
       img.src = url;
@@ -422,8 +426,8 @@
     for (let i = 0; i < imageFiles.length; i += BATCH) {
       const batch = imageFiles.slice(i, i + BATCH);
       await Promise.all(batch.map(async file => {
-        const thumb = await generateThumb(file);
-        const photo = { filename: file.name, thumb, col: 1 };
+        const { thumb, w, h } = await generateThumb(file);
+        const photo = { filename: file.name, thumb, col: 1, w, h };
         if (preloadMap && preloadMap[file.name]) {
           const info = preloadMap[file.name];
           photo.col = info.col;
@@ -789,7 +793,9 @@
           const camPart      = p.camera   ? ', camera: "'   + p.camera   + '"' : '';
           const filmPart     = p.film     ? ', film: "'     + p.film     + '"' : '';
           const locationPart = p.location ? ', location: "' + p.location + '"' : '';
-          lines.push('  { src: "images/' + p.filename + '", title: "' + titleFromFilename(p.filename) + '", category: "' + cat + '", col: ' + colNum + camPart + filmPart + locationPart + ' }');
+          const wPart        = p.w        ? ', w: '         + p.w              : '';
+          const hPart        = p.h        ? ', h: '         + p.h              : '';
+          lines.push('  { src: "images/' + p.filename + '", title: "' + titleFromFilename(p.filename) + '", category: "' + cat + '", col: ' + colNum + camPart + filmPart + locationPart + wPart + hPart + ' }');
         });
       });
     });
