@@ -201,7 +201,7 @@
       <span>⬡ GitHub connection</span>
       <span class="toggle-icon">▾</span>
     </div>
-    <div class="gh-body" id="ghBody">
+    <div class="gh-body open" id="ghBody">
       <p>Connect to your GitHub repo to automatically fetch your current array and publish changes directly. Your token is stored only in this browser.</p>
       <div class="gh-row">
         <input class="gh-input" id="ghToken" type="password" placeholder="GitHub personal access token (ghp_...)" autocomplete="off" />
@@ -860,16 +860,9 @@
 
   // Toggle GitHub panel
   document.getElementById('ghToggle').addEventListener('click', () => {
-    const body = document.getElementById('ghBody');
-    const hdr  = document.getElementById('ghToggle');
-    body.classList.toggle('open');
-    hdr.classList.toggle('open');
+    document.getElementById('ghBody').classList.toggle('open');
+    document.getElementById('ghToggle').classList.toggle('open');
   });
-  // Auto-open if no token saved
-  if (!ghToken.value) {
-    document.getElementById('ghBody').classList.add('open');
-    document.getElementById('ghToggle').classList.add('open');
-  }
 
   ghSaveBtn.addEventListener('click', () => {
     localStorage.setItem(STORAGE_KEY_TOKEN, ghToken.value.trim());
