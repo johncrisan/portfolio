@@ -845,137 +845,126 @@
   });
 
   // ── GitHub integration ───────────────────────
-  const STORAGE_KEY_TOKEN = 'gh_token';
-  const STORAGE_KEY_REPO  = 'gh_repo';
-  const ghToken  = document.getElementById('ghToken');
-  const ghRepo   = document.getElementById('ghRepo');
-  const ghSaveBtn  = document.getElementById('ghSaveBtn');
-  const ghFetchBtn = document.getElementById('ghFetchBtn');
-  const ghStatus   = document.getElementById('ghStatus');
-  const publishBtn = document.getElementById('publishBtn');
+  (function() {
+    var elToken    = document.getElementById('ghToken');
+    var elRepo     = document.getElementById('ghRepo');
+    var elSaveBtn  = document.getElementById('ghSaveBtn');
+    var elFetchBtn = document.getElementById('ghFetchBtn');
+    var elStatus   = document.getElementById('ghStatus');
+    var elPublish  = document.getElementById('publishBtn');
+    var elToggle   = document.getElementById('ghToggle');
+    var elBody     = document.getElementById('ghBody');
 
-  // Load saved credentials
-  ghToken.value = localStorage.getItem(STORAGE_KEY_TOKEN) || '';
-  ghRepo.value  = localStorage.getItem(STORAGE_KEY_REPO)  || '';
+    // Load saved credentials
+    try { elToken.value = localStorage.getItem('gh_token') || ''; } catch(e) {}
+    try { elRepo.value  = localStorage.getItem('gh_repo')  || ''; } catch(e) {}
 
-  // Toggle GitHub panel
-  document.getElementById('ghToggle').addEventListener('click', () => {
-    document.getElementById('ghBody').classList.toggle('open');
-    document.getElementById('ghToggle').classList.toggle('open');
-  });
+    // Show publish button if already configured
+    if (elToken.value && elRepo.value) elPublish.style.display = '';
 
-  ghSaveBtn.addEventListener('click', () => {
-    localStorage.setItem(STORAGE_KEY_TOKEN, ghToken.value.trim());
-    localStorage.setItem(STORAGE_KEY_REPO,  ghRepo.value.trim());
-    ghStatus.textContent = 'Saved.';
-    ghStatus.className = 'gh-status ok';
-    if (ghToken.value && ghRepo.value) publishBtn.style.display = '';
-    setTimeout(() => { ghStatus.textContent = ''; ghStatus.className = 'gh-status'; }, 2000);
-  });
+    // Toggle panel open/closed
+    elToggle.addEventListener('click', function() {
+      elBody.classList.toggle('open');
+      elToggle.classList.toggle('open');
+    });
 
-  // Show publish button if credentials already saved
-  if (ghToken.value && ghRepo.value) publishBtn.style.display = '';
+    // Save credentials to localStorage
+    elSaveBtn.addEventListener('click', function() {
+      var token = elToken.value.trim();
+      var repo  = elRepo.value.trim();
+      try { localStorage.setItem('gh_token', token); } catch(e) {}
+      try { localStorage.setItem('gh_repo',  repo);  } catch(e) {}
+      elStatus.textContent = 'Saved.';
+      elStatus.className = 'gh-status ok';
+      if (token && repo) elPublish.style.display = '';
+      setTimeout(function() { elStatus.textContent = ''; elStatus.className = 'gh-status'; }, 2000);
+    });
 
-  async function ghApiGet(path) {
-    const res = await fetch('https://api.github.com/' + path, {
-      headers: {
-        'Authorization': 'token ' + ghToken.value.trim(),
-        'Accept': 'application/vnd.github.v3+json'
+    // Fetch PHOTOS array from GitHub
+    elFetchBtn.addEventListener('click', async function() {
+      var token = elToken.value.trim();
+      var repo  = elRepo.value.trim();
+      if (!token || !repo) {
+        elStatus.textContent = 'Enter token and repo, then click Save first.';
+        elStatus.className = 'gh-status err';
+        return;
+      }
+      elStatus.textContent = 'Fetching…';
+      elStatus.className = 'gh-status loading';
+      try {
+        var res = await fetch('https://api.github.com/repos/' + repo + '/contents/index.html', {
+          headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (!res.ok) throw new Error('GitHub returned ' + res.status + ' — check your token and repo name');
+        var data = await res.json();
+        var fileContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+        var start = fileContent.indexOf('const PHOTOS = [');
+        var end   = fileContent.indexOf('];', start) + 2;
+        if (start === -1) throw new Error('PHOTOS array not found in index.html');
+        document.getElementById('preloadInput').value = fileContent.slice(start, end);
+        document.getElementById('preloadBtn').click();
+        document.getElementById('preloadBody').classList.add('open');
+        document.getElementById('preloadToggle').classList.add('open');
+        elStatus.textContent = '✓ Array loaded — add your photos below';
+        elStatus.className = 'gh-status ok';
+      } catch(e) {
+        elStatus.textContent = 'Error: ' + e.message;
+        elStatus.className = 'gh-status err';
       }
     });
-    if (!res.ok) throw new Error('GitHub API error: ' + res.status);
-    return res.json();
-  }
 
-  async function getIndexFileSha() {
-    const repo = ghRepo.value.trim();
-    const data = await ghApiGet('repos/' + repo + '/contents/index.html');
-    return { sha: data.sha, content: atob(data.content.replace(/
-/g, '')) };
-  }
+    // Publish updated array to GitHub
+    elPublish.addEventListener('click', async function() {
+      var token = elToken.value.trim();
+      var repo  = elRepo.value.trim();
+      if (!token || !repo) { alert('Save your token and repo first.'); return; }
 
-  ghFetchBtn.addEventListener('click', async () => {
-    const token = ghToken.value.trim();
-    const repo  = ghRepo.value.trim();
-    if (!token || !repo) {
-      ghStatus.textContent = 'Please enter your token and repo first.';
-      ghStatus.className = 'gh-status err';
-      return;
-    }
-    ghStatus.textContent = 'Fetching…';
-    ghStatus.className = 'gh-status loading';
-    try {
-      const { content } = await getIndexFileSha();
-      // Extract PHOTOS array
-      const start = content.indexOf('const PHOTOS = [');
-      const end   = content.indexOf('];', start) + 2;
-      if (start === -1) throw new Error('Could not find PHOTOS array in index.html');
-      const array = content.slice(start, end);
-      // Paste into preload textarea and apply
-      document.getElementById('preloadInput').value = array;
-      document.getElementById('preloadBtn').click();
-      ghStatus.textContent = '✓ Array loaded — now add your photos below';
-      ghStatus.className = 'gh-status ok';
-      // Open preload panel
-      document.getElementById('preloadBody').classList.add('open');
-      document.getElementById('preloadToggle').classList.add('open');
-    } catch(e) {
-      ghStatus.textContent = 'Error: ' + e.message;
-      ghStatus.className = 'gh-status err';
-    }
-  });
+      document.getElementById('generateBtn').click();
+      var newArray = document.getElementById('codeOutput').value;
+      if (!newArray || !newArray.trim()) { alert('No photos to publish — add photos first.'); return; }
 
-  publishBtn.addEventListener('click', async () => {
-    const token = ghToken.value.trim();
-    const repo  = ghRepo.value.trim();
-    if (!token || !repo) {
-      alert('Please save your GitHub token and repo first.');
-      return;
-    }
-    // Generate array first
-    document.getElementById('generateBtn').click();
-    const newArray = codeOutput.value;
-    if (!newArray) { alert('No photos to publish.'); return; }
+      elPublish.textContent = 'Publishing…';
+      elPublish.disabled = true;
 
-    publishBtn.textContent = 'Publishing…';
-    publishBtn.disabled = true;
-    try {
-      const { sha, content } = await getIndexFileSha();
-      const start = content.indexOf('const PHOTOS = [');
-      const end   = content.indexOf('];', start) + 2;
-      if (start === -1) throw new Error('Could not find PHOTOS array in index.html');
-      const newContent = content.slice(0, start) + newArray + content.slice(end);
-      const encoded = btoa(unescape(encodeURIComponent(newContent)));
-      const res = await fetch('https://api.github.com/repos/' + repo + '/contents/index.html', {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'token ' + token,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: 'Update photo array via arranger',
-          content: encoded,
-          sha: sha
-        })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || res.status);
+      try {
+        var res = await fetch('https://api.github.com/repos/' + repo + '/contents/index.html', {
+          headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (!res.ok) throw new Error('GitHub error ' + res.status);
+        var data = await res.json();
+        var sha = data.sha;
+        var fileContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+        var start = fileContent.indexOf('const PHOTOS = [');
+        var end   = fileContent.indexOf('];', start) + 2;
+        if (start === -1) throw new Error('PHOTOS array not found in index.html');
+        var newContent = fileContent.slice(0, start) + newArray + fileContent.slice(end);
+        var encoded = btoa(unescape(encodeURIComponent(newContent)));
+        var putRes = await fetch('https://api.github.com/repos/' + repo + '/contents/index.html', {
+          method: 'PUT',
+          headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Update photo array via arranger', content: encoded, sha: sha })
+        });
+        if (!putRes.ok) {
+          var errData = await putRes.json();
+          throw new Error(errData.message || putRes.status);
+        }
+        elPublish.textContent = '✓ Published!';
+        elStatus.textContent = '✓ Live in ~1 min';
+        elStatus.className = 'gh-status ok';
+        setTimeout(function() {
+          elPublish.textContent = 'Publish to GitHub ↑';
+          elPublish.disabled = false;
+        }, 3000);
+      } catch(e) {
+        alert('Publish failed: ' + e.message);
+        elPublish.textContent = 'Publish to GitHub ↑';
+        elPublish.disabled = false;
       }
-      publishBtn.textContent = '✓ Published!';
-      setTimeout(() => {
-        publishBtn.textContent = 'Publish to GitHub ↑';
-        publishBtn.disabled = false;
-      }, 3000);
-    } catch(e) {
-      alert('Publish failed: ' + e.message);
-      publishBtn.textContent = 'Publish to GitHub ↑';
-      publishBtn.disabled = false;
-    }
-  });
+    });
 
-  // ── Copy ──────────────────────────────────────
+  })();
+
+    // ── Copy ──────────────────────────────────────
   copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(codeOutput.value).then(() => {
       copySuccess.classList.add('show');
