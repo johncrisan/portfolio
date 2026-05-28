@@ -590,6 +590,9 @@
       const f = btn.dataset.filter;
       filtered = PHOTOS.filter(p => p.category === f);
       renderGallery(filtered);
+      if (typeof gtag === 'function') {
+        gtag('event', 'tab_switch', { tab: f });
+      }
     });
 
     // Lightbox
@@ -607,6 +610,10 @@
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
+      if (typeof gtag === 'function') {
+        const p = filtered[index];
+        gtag('event', 'lightbox_open', { photo: p.src.replace('images/', ''), category: p.category });
+      }
     }
 
     function closeLightbox() {
@@ -648,11 +655,17 @@
     function prevPhoto() {
       currentIndex = (currentIndex - 1 + filtered.length) % filtered.length;
       showPhoto();
+      if (typeof gtag === 'function') {
+        gtag('event', 'lightbox_navigate', { direction: 'prev', photo: filtered[currentIndex].src.replace('images/', '') });
+      }
     }
 
     function nextPhoto() {
       currentIndex = (currentIndex + 1) % filtered.length;
       showPhoto();
+      if (typeof gtag === 'function') {
+        gtag('event', 'lightbox_navigate', { direction: 'next', photo: filtered[currentIndex].src.replace('images/', '') });
+      }
     }
 
     document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
@@ -680,6 +693,27 @@
       const delta = e.changedTouches[0].clientX - touchStartX;
       if (Math.abs(delta) > 50) delta < 0 ? nextPhoto() : prevPhoto();
     });
+
+    // Scroll depth tracking
+    (function() {
+      var milestones = [25, 50, 75, 100];
+      var fired = {};
+      window.addEventListener('scroll', function() {
+        var scrollTop = window.scrollY || document.documentElement.scrollTop;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight <= 0) return;
+        var pct = Math.round((scrollTop / docHeight) * 100);
+        milestones.forEach(function(m) {
+          if (!fired[m] && pct >= m) {
+            fired[m] = true;
+            if (typeof gtag === 'function') {
+              gtag('event', 'scroll_depth', { depth_percent: m });
+            }
+          }
+        });
+      }, { passive: true });
+    })();
+
   </script>
 </body>
 </html>
